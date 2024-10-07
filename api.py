@@ -6,9 +6,18 @@ import logging
 import wikipedia
 import webbrowser
 import subprocess
+import smtplib
+from email.mime.text import MIMEText
 
 logger = logging.getLogger("tempreature-control")
 logger.setLevel(logging.INFO)
+
+
+EMAIL = {
+    "Akshhay": "akshhaykmurali@gmail.com",
+    "Me": "akshhaykmurali@gmail.com",
+    "Myself": "akshhaykmurali@gmail.com",
+}
 
 
 class Zone(enum.Enum):
@@ -88,3 +97,34 @@ class AssistantFnc(llm.FunctionContext):
             return f"Cooked up the React project '{folder_name}'  and opened in Visual Studio Code"
         except Exception as e:
             return f"An error occurred: {str(e)}"
+
+    @llm.ai_callable(description="send an email to a specific person")
+    def send_email(self, person: Annotated[str, llm.TypeInfo(description="The name of the person to email")], message: Annotated[str, llm.TypeInfo(description="The message to send")]):
+        logger.info("Sending email to %s", person)
+
+        if person in EMAIL:
+            email_address = EMAIL[person]
+        else:
+            email_address = input(
+                f"Email for {person} not found. Please provide the email address: ")
+            EMAIL[person] = email_address
+
+        try:
+            # Create the email message
+            msg = MIMEText(message)
+            msg['Subject'] = f"Message for {person}"
+            msg['From'] = "your_email@example.com"  # Replace with your email
+            msg['To'] = email_address
+
+            # Send the email
+            # Replace with your SMTP server
+            with smtplib.SMTP('smtp.example.com', 587) as server:
+                server.starttls()
+                # Replace with your login credentials
+                server.login("your_email@example.com", "your_password")
+                server.sendmail("your_email@example.com",
+                                email_address, msg.as_string())
+
+            return f"Email sent to {person} at {email_address}"
+        except Exception as e:
+            return f"An error occurred while sending the email: {str(e)}"
